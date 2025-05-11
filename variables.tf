@@ -122,3 +122,9 @@ variable "artifact_registry_project_id" {
   type        = string
   default     = "united-park-449017-e8"
 }
+
+variable "ocai_location" {
+  description = "The project ID where the Artifact Registry resides"
+  type        = string
+  default     = "us"
+}

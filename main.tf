@@ -102,10 +102,18 @@ resource "google_project_service" "tivaa_service_vpcaccess" {
   disable_on_destroy         = false
 }
 
+resource "google_document_ai_processor" "tivaa_document_processor" {
+  type        = "OCR_PROCESSOR" # Replace with the desired processor type
+  location    = "us" # Ensure this matches the region where the service is enabled
+  display_name = "Tivaa Document Processor"
+  
+  depends_on = [google_project_service.tivaa_service_documentai] # Ensure the API is enabled first
+}
+
 # Introduce a delay after creating these resources, since it may take some time for the APIs to be fully enabled and ready for use. 
 # This is especially important for services like Cloud Functions and Cloud Run, which may require some time to initialize.
 # The time_sleep resource is used to create a delay in the Terraform execution plan.
-resource "time_sleep" "wait_6_minutes" {
+resource "time_sleep" "wait_x_minutes" {
   depends_on = [
     google_project_service.tivaa_service_artifactregistry,
     google_project_service.tivaa_service_cloudfunctions,
@@ -122,5 +130,5 @@ resource "time_sleep" "wait_6_minutes" {
     google_project_service.tivaa_service_compute,
     google_project_service.tivaa_service_vpcaccess
   ]
-  create_duration = "360s" # Wait for 5 minute
+  create_duration = "360s" # Wait for x minute
 }

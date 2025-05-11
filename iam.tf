@@ -29,6 +29,21 @@ resource "google_storage_bucket" "tivaa_service_function_bucket" {
 
   # Prevent public access
   public_access_prevention = "enforced"
+
+  # Enable object versioning for soft delete
+  versioning {
+    enabled = true
+  }
+
+  # Add lifecycle rule to limit restore duration
+  lifecycle_rule {
+    action {
+      type = "Delete"
+    }
+    condition {
+      age     = 1 # Delete noncurrent versions after 1 day (minimum)
+    }
+  }
 }
 
 # For Cloud Storage (bucket-level)

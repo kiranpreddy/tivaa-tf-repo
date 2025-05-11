@@ -1,13 +1,11 @@
 # Provide values for variables defined in variables.tf
-gcp_project_id = "test-tf-deploy-459417"
+gcp_project_id = "tenant1-459420"
 tenant_name = "techniecode-sbx"
 gcp_region = "us-central1"
 docker_image_uri="gcr.io/united-park-449017-e8/techniecode-aicondoreviewapi:latest"
 service_account_email="harsha.test7@techniecode.com"
 allow_public_access = true
 environment_variables = {
-    GCS_BUCKET_NAME="techniecode-qa"
-    GOOGLE_CLOUD_PROJECT="united-park-449017-e8"
     ENCOMPASS_USERNAME="admin@encompass:BE11200014"
     ENCOMPASS_PASSWORD="AHYAIWWMMT" 
     CLIENT_ID="arkdvig"

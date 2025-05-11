@@ -19,6 +19,26 @@ resource "google_cloud_run_v2_service" "tivaa_service" {
           memory = var.service_memory
         }
       }
+      
+      env {
+        name  = "GOOGLE_CLOUD_PROJECT"
+        value = var.gcp_project_id # Use the region variable dynamically
+      }
+
+      env {
+        name  = "GCS_BUCKET_NAME"
+        value = google_storage_bucket.tivaa_service_function_bucket.name # Use the region variable dynamically
+      }
+      
+      env {
+        name  = "DOCAI_LOCATION"
+        value = var.ocai_location # Use the region variable dynamically
+      }
+
+      env {
+        name  = "DOCUMENT_PROCESSOR_ID"
+        value = google_document_ai_processor.tivaa_document_processor.id # Dynamically reference the processor ID
+      }
 
       dynamic "env" {
         for_each = var.environment_variables
