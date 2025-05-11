@@ -1,0 +1,40 @@
+
+resource "google_compute_global_address" "load_balancer_ip" {
+  name = "${var.tenant_name}-lb-ip"
+}
+
+resource "google_compute_url_map" "url_map" {
+  name            = "${var.tenant_name}-url-map"
+  default_service = google_compute_backend_service.backend_service.self_link
+}
+
+resource "google_compute_target_https_proxy" "https_proxy" {
+  name        = "${var.tenant_name}-https-proxy"
+  url_map     = google_compute_url_map.url_map.self_link
+  ssl_certificates = [google_compute_managed_ssl_certificate.ssl_cert.self_link]
+}
+
+resource "google_compute_global_forwarding_rule" "https_forwarding_rule" {
+  name        = "${var.tenant_name}-https-forwarding-rule"
+  target      = google_compute_target_https_proxy.https_proxy.self_link
+  port_range  = "443"
+  ip_protocol = "TCP"
+  ip_address  = google_compute_global_address.load_balancer_ip.address
+}
+
+resource "google_compute_backend_service" "backend_service" {
+  name                  = "${var.tenant_name}-backend-service"
+  load_balancing_scheme = "EXTERNAL"
+  protocol              = "HTTPS"
+  timeout_sec           = 30
+
+  backend {
+    group = google_compute_network_endpoint_group.cloud_run_neg.id
+  }
+}
+
+resource "google_compute_network_endpoint_group" "cloud_run_neg" {
+  name                  = "${var.tenant_name}-cloud-run-neg"
+  network_endpoint_type = "SERVERLESS"
+  network = google_compute_network.tivaa_service_vpc_network.name
+}

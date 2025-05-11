@@ -14,18 +14,6 @@ variable "service_account_id" {
   default     = "tivaa-ai-function-sa"
 }
 
-variable "service_account_display_name" {
-  description = "The display name for the service account."
-  type        = string
-  default     = "RAG AI Cloud Function Service Account"
-}
-
-variable "cloud_storage_bucket_name" {
-  description = "The name of the Cloud Storage bucket the service account needs to access (e.g., 'your-unique-bucket-name'). This bucket must exist."
-  type        = string
-  # Example: "my-rag-app-bucket"
-}
-
 variable "vertex_ai_role" {
   description = "The IAM role to grant for Vertex AI access."
   type        = string
@@ -50,12 +38,6 @@ variable "enable_secret_manager_access" {
   default     = true # Set to false if your application doesn't use Secret Manager
 }
 
-variable "service_name" {
-  description = "Name for the Cloud Run service (will also be part of the URL)."
-  type        = string
-  default     = "rag-ai-app"
-}
-
 variable "function_description" {
   description = "Description for the deployed service/function."
   type        = string
@@ -71,17 +53,12 @@ variable "docker_image_uri" {
 variable "service_account_email" {
   description = "The email of the service account to be used by the Cloud Run service. This should be the output from your Phase 4 Terraform."
   type        = string
-  # Example: "rag-ai-function-sa@your-gcp-project-id.iam.gserviceaccount.com"
 }
 
 variable "environment_variables" {
-  description = "A map of environment variables to set for the application (e.g., BUCKET_NAME, VERTEX_AI_PROJECT)."
+  description = "Environment variables (e.g. BUCKET_NAME, VERTEX_AI_PROJECT)"
   type        = map(string)
   default = {
-    # Example:
-    # BUCKET_NAME       = "your-rag-bucket" # Replace with actual bucket name or reference
-    # VERTEX_AI_PROJECT = "your-gcp-project-id" # Can also use var.gcp_project_id
-    # VERTEX_AI_REGION  = "us-central1"      # Can also use var.region
   }
 }
 
@@ -94,7 +71,7 @@ variable "app_port" {
 variable "service_memory" {
   description = "Memory allocated to the Cloud Run service (e.g., '512Mi', '1Gi')."
   type        = string
-  default     = "512Mi"
+  default     = "4096Mi"
 }
 
 variable "service_cpu" {
@@ -112,7 +89,7 @@ variable "service_timeout_seconds" {
 variable "max_instances" {
   description = "Maximum number of container instances for the service. Set to 0 for default scaling."
   type        = number
-  default     = 10 # Adjust based on expected load
+  default     = 3 # Adjust based on expected load
 }
 
 # --- Phase 6: Security Variables ---
@@ -129,14 +106,19 @@ variable "invoker_principals" {
   # Example: ["user:jane.doe@example.com", "serviceAccount:my-other-sa@my-gcp-project-id.iam.gserviceaccount.com"]
 }
 
-# Add your variable declarations here
-
-variable "vpc_network_name" {
-  description = "The name of the VPC network"
+variable "tenant_name" {
+  description = "The name of the tenant, Be between 1 and 23 characters long"
   type        = string
 }
 
-variable "private_subnet_name" {
-  description = "The name of the VPC network"
+variable "tenant_authorized_ip_cidr" {
+  description = "The IP or CIDR range allowed to access the Cloud Run service"
   type        = string
+  default     = "35.23.45.67/32" # Replace with your desired IP or CIDR range
+}
+
+variable "artifact_registry_project_id" {
+  description = "The project ID where the Artifact Registry resides"
+  type        = string
+  default     = "united-park-449017-e8"
 }
