@@ -11,7 +11,7 @@ variable "gcp_region" {
 variable "service_account_id" {
   description = "The desired ID for the new service account (e.g., 'rag-ai-function-sa')."
   type        = string
-  default     = "tivaa-ai-function-sa"
+  default     = "tiiva-ai-function-sa"
 }
 
 variable "vertex_ai_role" {
@@ -127,4 +127,20 @@ variable "ocai_location" {
   description = "The project ID where the Artifact Registry resides"
   type        = string
   default     = "us"
+}
+
+variable "app_prefix" {
+  description = "The constant prefix for *all* our apps"
+  type        = string
+  default     = "techniecode"
+}
+
+variable "app_name" {
+  description = "The name of the application"
+  type        = string
+}
+
+variable "app_env" {
+  description = "Tenant + environment code (e.g. 'libertyqa')"
+  type        = string
 }

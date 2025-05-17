@@ -1,39 +1,39 @@
-resource "google_compute_network" "tivaa_service_vpc_network" {
-  name                    = "${var.tenant_name}-vpc-network" 
+resource "google_compute_network" "tiiva_service_vpc_network" {
+  name                    = "${var.tenant_name}-vpc-network"
   auto_create_subnetworks = false
 }
 
-resource "google_compute_subnetwork" "tivaa_service_private_subnet" {
-  name                    = "${var.tenant_name}-private-subnet" 
-  ip_cidr_range           = "10.0.0.0/24"
-  region                  = var.gcp_region
-  network                 = google_compute_network.tivaa_service_vpc_network.id
+resource "google_compute_subnetwork" "tiiva_service_private_subnet" {
+  name                     = "${var.tenant_name}-private-subnet"
+  ip_cidr_range            = "10.0.0.0/24"
+  region                   = var.gcp_region
+  network                  = google_compute_network.tiiva_service_vpc_network.id
   private_ip_google_access = true # Enable Private Google Access
 }
 
-resource "google_vpc_access_connector" "tivaa_service_private_connector" {
-  name          = "${var.tenant_name}"
+resource "google_vpc_access_connector" "tiiva_service_private_connector" {
+  name          = var.tenant_name
   region        = var.gcp_region
-  network       = google_compute_network.tivaa_service_vpc_network.name
+  network       = google_compute_network.tiiva_service_vpc_network.name
   ip_cidr_range = "10.8.0.0/28" # Adjust CIDR range as needed
 
-  max_instances = 3  # Number of instances (adjust as needed)
+  max_instances = 3 # Number of instances (adjust as needed)
   min_instances = 2
 
   depends_on = [google_compute_firewall.allow_cloud_run_access]
 }
 
-resource "google_compute_router" "tivaa_service_nat_router" {
+resource "google_compute_router" "tiiva_service_nat_router" {
   name    = "${var.tenant_name}-nat-router"
   region  = var.gcp_region
-  network = google_compute_network.tivaa_service_vpc_network.id
+  network = google_compute_network.tiiva_service_vpc_network.id
 }
 
-resource "google_compute_router_nat" "tivaa_service_nat_gateway" {
+resource "google_compute_router_nat" "tiiva_service_nat_gateway" {
   name                               = "${var.tenant_name}-nat-gateway"
   region                             = var.gcp_region
-  router                             = google_compute_router.tivaa_service_nat_router.name
-  nat_ip_allocate_option             = "AUTO_ONLY" # Automatically allocate external IPs
+  router                             = google_compute_router.tiiva_service_nat_router.name
+  nat_ip_allocate_option             = "AUTO_ONLY"                     # Automatically allocate external IPs
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES" # Allow all subnets
 }
 
@@ -54,7 +54,7 @@ locals {
 
 resource "google_compute_firewall" "allow_cloud_run_access" {
   name    = "${var.tenant_name}-allow-cloud-run-access"
-  network = google_compute_network.tivaa_service_vpc_network.name
+  network = google_compute_network.tiiva_service_vpc_network.name
 
   allow {
     protocol = "tcp"

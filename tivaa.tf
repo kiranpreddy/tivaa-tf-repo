@@ -1,9 +1,35 @@
-resource "google_cloud_run_v2_service" "tivaa_service" {
-  name     = "${var.tenant_name}-tivaa-service"
-  location = var.gcp_region
+locals {
+
+  service_id = "${var.app_prefix}-${var.app_name}-${var.app_env}"
+
+
+  static_env = {
+    ENCOMPASS_AUTH_URL    = "https://api.elliemae.com/oauth2/v1/token"
+    ENCOMPASS_BASE_URL    = "https://api.elliemae.com/encompass/v3/loans"
+    GCS_CONST_FOLDER      = "selling-guide"
+    DOCAI_LOCATION        = "us"
+    PIPELINE_REPORT_URL   = "https://api.elliemae.com/encompass/v3/loanPipeline/report"
+    GCS_FOLDER            = "condos"
+    QUESTIONNAIRE_PREFIX  = "questionnaire/liberty"
+    DOCAI_PROCESSOR_ID    = regex("^.*/([^/]+)$", google_document_ai_processor.tivaa_document_processor.id)[0]
+    GOOGLE_CLOUD_PROJECT  = var.gcp_project_id
+    GCS_BUCKET_NAME       = google_storage_bucket.tiiva_service_function_bucket.name
+    SECRET_KEY            = google_secret_manager_secret.tiiva_sa_secret
+    REDEPLOY_TS           = timestamp()
+  }
+
+  all_env = merge(
+    local.static_env,
+    var.environment_variables
+  )
+}
+
+resource "google_cloud_run_v2_service" "tiiva_service" {
+  name     = local.service_id
   project  = var.gcp_project_id
+  location = var.gcp_region
   deletion_protection = false
-  ingress  = "INGRESS_TRAFFIC_ALL" # Allow traffic from all sources (internal and external)
+  ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
     containers {
@@ -19,29 +45,9 @@ resource "google_cloud_run_v2_service" "tivaa_service" {
           memory = var.service_memory
         }
       }
-      
-      env {
-        name  = "GOOGLE_CLOUD_PROJECT"
-        value = var.gcp_project_id # Use the region variable dynamically
-      }
-
-      env {
-        name  = "GCS_BUCKET_NAME"
-        value = google_storage_bucket.tivaa_service_function_bucket.name # Use the region variable dynamically
-      }
-      
-      env {
-        name  = "DOCAI_LOCATION"
-        value = var.ocai_location # Use the region variable dynamically
-      }
-
-      env {
-        name  = "DOCUMENT_PROCESSOR_ID"
-        value = google_document_ai_processor.tivaa_document_processor.id # Dynamically reference the processor ID
-      }
 
       dynamic "env" {
-        for_each = var.environment_variables
+        for_each = local.all_env
         content {
           name  = env.key
           value = env.value
@@ -49,12 +55,11 @@ resource "google_cloud_run_v2_service" "tivaa_service" {
       }
     }
 
-    # Attach the service account
-    service_account = google_service_account.tivaa_service_function_sa.email
+    service_account = google_service_account.tiiva_service_function_sa.email
 
     vpc_access {
-      connector = google_vpc_access_connector.tivaa_service_private_connector.id
-      egress    = "ALL_TRAFFIC" # Or "PRIVATE_RANGES_ONLY"
+      connector = google_vpc_access_connector.tiiva_service_private_connector.id
+      egress    = "ALL_TRAFFIC"
     }
 
     scaling {
@@ -68,29 +73,27 @@ resource "google_cloud_run_v2_service" "tivaa_service" {
   }
 
   depends_on = [
-    google_service_account.tivaa_service_function_sa,
-    google_project_iam_member.tivaa_service_sa_vertex_ai_access,
-    google_vpc_access_connector.tivaa_service_private_connector # Ensure VPC connector is created first
+    google_document_ai_processor.tivaa_document_processor,
+    google_service_account.tiiva_service_function_sa,
+    google_project_iam_member.tiiva_docai_api_user,
+    google_vpc_access_connector.tiiva_service_private_connector,
   ]
 }
 
-# If public access is allowed
-resource "google_cloud_run_v2_service_iam_binding" "allow_public_for_tivaa_service" {
+resource "google_cloud_run_v2_service_iam_binding" "allow_public_for_tiiva_service" {
   count    = var.allow_public_access ? 1 : 0
-  project  = google_cloud_run_v2_service.tivaa_service.project
-  location = google_cloud_run_v2_service.tivaa_service.location
-  name     = google_cloud_run_v2_service.tivaa_service.name
+  project  = google_cloud_run_v2_service.tiiva_service.project
+  location = google_cloud_run_v2_service.tiiva_service.location
+  name     = google_cloud_run_v2_service.tiiva_service.name
   role     = "roles/run.invoker"
-  members  = ["allUsers"] # Allow public access
+  members  = ["allUsers"]
 }
 
-# If public access is NOT allowed, grant invoker role to specified principals
-resource "google_cloud_run_v2_service_iam_member" "tivaa_service_invokers" {
+resource "google_cloud_run_v2_service_iam_member" "tiiva_service_invokers" {
   count    = !var.allow_public_access && length(var.invoker_principals) > 0 ? length(var.invoker_principals) : 0
-  project  = google_cloud_run_v2_service.tivaa_service.project
-  location = google_cloud_run_v2_service.tivaa_service.location
-  name     = google_cloud_run_v2_service.tivaa_service.name # Changed from 'service' to 'name'
+  project  = google_cloud_run_v2_service.tiiva_service.project
+  location = google_cloud_run_v2_service.tiiva_service.location
+  name     = google_cloud_run_v2_service.tiiva_service.name
   role     = "roles/run.invoker"
   member   = var.invoker_principals[count.index]
 }
-
